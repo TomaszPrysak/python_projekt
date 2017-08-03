@@ -2,7 +2,7 @@
 
 import pymysql
 
-class Start:
+class MenuStart:
     
     # Użytkownik obsługujący aplikację dokonuje wyboru rodzju konta z którego będzie korzystać
     # Wybór konta powoduje zalogowanie się przez odpowiedni profil do bazy danych
@@ -14,26 +14,30 @@ class Start:
     def __init__(self):
         print()
         print(linia)
-        print("MENU STARTOWE")
+        print("MENU START")
         print("Wybierz rodzaj konta: ")
-        type_user = input("(U)żytkownik - (K)elner - (A)dministrator || (W)wyjście: ")
+        type_user = input("(U)żytkownik\n(K)elner\n(A)dministrator\n(W)wyjście z programu\nTwój wybór: ")
         while (type_user != "W" and type_user != "w" and type_user != "U" and type_user != "u" and type_user != "K" and type_user != "k" and type_user != "A" and type_user != "a"):
+            print()
+            print(linia)
             print("Wprowadzono niepoprawny klawisz")
-            type_user = input("(U)żytkownik - (K)elner - (A)dministrator || (W)wyjście: ")
+            print("Wybierz rodzaj konta: ")
+            type_user = input("(U)żytkownik\n(K)elner\n(A)dministrator\n(W)wyjście z programu\nTwój wybór: ")
         if (type_user == "U" or type_user == "u"):
             database_user_open_file = open("database_user.txt", "r")
             database_user_text = database_user_open_file.read()
             database_user_open_file.close()
-            start1 = User(database_user_text)        
+            start = User(database_user_text)        
         elif (type_user == "K" or type_user == "k"):
             database_waiter_open_file = open("database_waiter.txt", "r")
             database_waiter_text = database_waiter_open_file.read()
             database_waiter_open_file.close()
-            start1 = Waiter(database_waiter_text)        
+            start = Waiter(database_waiter_text)        
         elif (type_user == "A" or type_user == "a"):
             database_admin = input("Wprowadź hasło administratora: ")
-            start1 = Admin(database_admin)        
+            start = Admin(database_admin)        
         else:
+            print()
             print(linia)
             print("Zamknięcie aplikacji. Do zobaczenia")        
 
@@ -57,43 +61,68 @@ class User:
     def __init__(self, password):
         self.password = password
         self.conn = pymysql.connect("localhost", "users", self.password, "wolny_stolik")
-        self.c = self.conn.cursor()  
+        self.c = self.conn.cursor()
+        self.user_start()
+        
+    def user_start(self):
         print()
         print(linia)        
-        print("Strefa użytkownika")
-        action = ""
-        while (action != "P" and action != "p"):
-            action = input("(L)ogowanie istniejącego użytkownika - (R)ejestracja nowego użytkownika || (P)owrót do MENU START: ")
-            if (action == "L" or action == "l"):
-                self.log_user()
-            elif (action == "R" or action == "r"):
-                self.register_new_user()
-        start2 = Start()
-    def log_user(self):
+        print("MENU LOGOWANIA UŻYTKOWNIKA")
+        action = input("(L)ogowanie istniejącego użytkownika\n(R)ejestracja nowego użytkownika\n(P)owrót do MENU START\nTwój wybór: ")
+        while (action != "P" and action != "p" and action != "R" and action != "r" and action != "L" and action != "l"):
+            print()
+            print("Wprowadzono niepoprawny klawisz")            
+            action = input("(L)ogowanie istniejącego użytkownika\n(R)ejestracja nowego użytkownika\n(P)owrót do MENU START\nTwój wybór: ")
+        if (action == "L" or action == "l"):
+            self.user_log()
+        elif (action == "R" or action == "r"):
+            self.newuser_reg()
+        elif (action == "P" or action == "p"):
+            start = MenuStart()
+        
+    def user_log(self):
         print()
         print(linia)
         e_mail_user = input("Podaj e-mail: ")
-        self.c.execute("select e_mail from users where e_mail = '" + e_mail_user + "';") # zwraca zapytanie w postaci tablicy w tablicy, w tym wypadku w tablicy w indeksie 0 wartość na indeksie 0
-        result_e_mail_user = self.c.fetchall()
-        while (len(result_e_mail_user) == 0):
-            print("Podany adres e-mail jest niepoprawny")
-            e_mail_user = input("Podaj e-mail: ")
-            self.c.execute("select e_mail, pass from users where e_mail = '" + e_mail_user + "';")
-            result_e_mail_user = self.c.fetchall()
-        if (e_mail_user == result_e_mail_user[0][0]):
-            pass_user = input("Podaj hasło: ")
-            self.c.execute("select pass from users where e_mail = '" + e_mail_user + "';")
-            result_pass_user = self.c.fetchall()
-            print(pass_user)
-            print(result_pass_user[0][0])
-            if (pass_user == result_pass_user[0][0]):
-                print("Zalogowano poprawnie")
-            
+        pass_user = input("Podaj hasło: ")
+        self.c.execute("select e_mail, pass from users where e_mail = '" + e_mail_user + "';")
+        result_user_log = self.c.fetchall()
+        while (len(result_user_log) == 0):
+            print()
+            print("Podany e-mail i/lub hasło są nieprawidłowe")
+            action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do Strefy użytkownika\nTwój wybór: ")
+            while (action != "W" and action != "w" and action != "P" and action != "p"):
+                print()
+                print("Wprowadzono niepoprawny klawisz")  
+                action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do Strefy użytkownika\nTwój wybór: ")
+            if (action == "W" or action == "w"):
+                self.user_log()
+            elif (action == "P" or action =="p"):
+                self.user_start()
+        if (e_mail_user == result_user_log[0][0]):
+            if (pass_user == result_user_log[0][1]):
+                self.user_panel()
+            else:
+                print()
+                print("Podany e-mail i/lub hasło są nieprawidłowe")
+                action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do Strefy użytkownika\nTwój wybór: ")
+                while (action != "W" and action != "w" and action != "P" and action != "p"):
+                    print()
+                    print("Wprowadzono niepoprawny klawisz")  
+                    action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do Strefy użytkownika\nTwój wybór: ")
+                if (action == "W" or action == "w"):
+                    self.user_log()
+                elif (action == "P" or action =="p"):
+                    self.user_start()
+    def newuser_reg(self):
+        print()
+        print(linia)
+        print("Rejestracja nowego użytkownika")
         
-        
-        
-        #print(self.c.fetchall())
-        #print(wynik[0][0]) wyświetla element z tablicy na indeksie 0 i wartości 0
+    def user_panel(self):
+        print()
+        print(linia)
+        print("Witaj w panelu użytkownika")
     
 class Waiter:
     
@@ -135,10 +164,9 @@ next = input("Naciśnij ENTER aby kontynuować: ")
 print(linia)
 
 while (next != ""):
+    print()
+    print(linia)
     print("Wprowadzono niepoprawny kawisz")
     next = input("Naciśnij ENTER aby kontynuować: ")
 
-start1 = Start()
-
-
-
+start = MenuStart()
