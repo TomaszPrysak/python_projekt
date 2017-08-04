@@ -8,8 +8,8 @@ class MenuStart:
     # Wybór konta powoduje zalogowanie się przez odpowiedni profil do bazy danych
     # Są trzy profile:
     # A - administrator, pełne uprawnienia do bazy danych
-    # U - użytkownik, uprawnienia do dodawania rekordów i ich kasowania w tabelach booking oraz users
-    # K - kelner, uprawnienia dostępu do dodawania rekordów i ich kasowania w tabelach restaurants, occupancy, type_tables, waiters, booking
+    # U - użytkownik, uprawnienia do dodawania, kasowania oraz uaktualniania rekordów w tabelach booking oraz users
+    # K - kelner, uprawnienia dostępu do dodawania, kasowania oraz uaktualniania rekordów w tabelach restaurants, occupancy, type_tables, waiters, booking
     
     def __init__(self):
         print()
@@ -37,9 +37,7 @@ class MenuStart:
             database_admin = input("Wprowadź hasło administratora: ")
             start = Admin(database_admin)        
         else:
-            print()
-            print(linia)
-            print("Zamknięcie aplikacji. Do zobaczenia")        
+            close = Close()        
 
 
 class Admin:
@@ -62,12 +60,12 @@ class User:
         self.password = password
         self.conn = pymysql.connect("localhost", "users", self.password, "wolny_stolik")
         self.c = self.conn.cursor()
-        self.user_start()
+        self.user_menu()
         
-    def user_start(self):
+    def user_menu(self):
         print()
         print(linia)        
-        print("MENU LOGOWANIA UŻYTKOWNIKA")
+        print("MENU LOGOWANIA")
         action = input("(L)ogowanie istniejącego użytkownika\n(R)ejestracja nowego użytkownika\n(P)owrót do MENU START\nTwój wybór: ")
         while (action != "P" and action != "p" and action != "R" and action != "r" and action != "L" and action != "l"):
             print()
@@ -83,46 +81,100 @@ class User:
     def user_log(self):
         print()
         print(linia)
-        e_mail_user = input("Podaj e-mail: ")
-        pass_user = input("Podaj hasło: ")
-        self.c.execute("select e_mail, pass from users where e_mail = '" + e_mail_user + "';")
+        user_e_mail = input("Podaj e-mail: ")
+        user_pass = input("Podaj hasło: ")
+        self.c.execute("select e_mail, pass from users where e_mail = '" + user_e_mail + "';")
         result_user_log = self.c.fetchall()
         while (len(result_user_log) == 0):
             print()
             print("Podany e-mail i/lub hasło są nieprawidłowe")
-            action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do Strefy użytkownika\nTwój wybór: ")
+            action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
             while (action != "W" and action != "w" and action != "P" and action != "p"):
                 print()
                 print("Wprowadzono niepoprawny klawisz")  
-                action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do Strefy użytkownika\nTwój wybór: ")
+                action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
             if (action == "W" or action == "w"):
                 self.user_log()
             elif (action == "P" or action =="p"):
-                self.user_start()
-        if (e_mail_user == result_user_log[0][0]):
-            if (pass_user == result_user_log[0][1]):
-                self.user_panel()
+                self.user_menu()
+        if (user_e_mail == result_user_log[0][0]):
+            if (user_pass == result_user_log[0][1]):
+                self.user_panel(user_e_mail)
             else:
                 print()
                 print("Podany e-mail i/lub hasło są nieprawidłowe")
-                action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do Strefy użytkownika\nTwój wybór: ")
+                action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
                 while (action != "W" and action != "w" and action != "P" and action != "p"):
                     print()
                     print("Wprowadzono niepoprawny klawisz")  
-                    action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do Strefy użytkownika\nTwój wybór: ")
+                    action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
                 if (action == "W" or action == "w"):
                     self.user_log()
                 elif (action == "P" or action =="p"):
-                    self.user_start()
+                    self.user_menu()
+                    
     def newuser_reg(self):
         print()
         print(linia)
         print("Rejestracja nowego użytkownika")
-        
-    def user_panel(self):
+        newuser_e_mail = input("Podaj adres e-mail (bedzie wykorzystywany do logowania): ")
+        while (self.check_e_mail_correct(newuser_e_mail) != 1):
+            print()
+            print("Podany ciąg nie jest adresem e-mail")
+            action = input("(W)prowadz e-mail ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+            while (action != "W" and action != "w" and action != "P" and action != "p"):
+                print()
+                print("Wprowadzono niepoprawny klawisz")  
+                action = input("(W)prowadz e-mail ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+            if (action == "W" or action == "w"):
+                self.newuser_reg()
+            elif (action == "P" or action =="p"):
+                self.user_menu()            
+        newuser_pass1 = input("Podaj hasło: ")
+        newuser_pass2 = input("Powtórz hasło: ")
+        while (newuser_pass1 != newuser_pass2):
+            print()
+            print("Hasła nie są identyczne")
+            action = input("(R)ozpocznij rejestrację od początku\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+            while (action != "W" and action != "w" and action != "P" and action != "p"):
+                print()
+                print("Wprowadzono niepoprawny klawisz")  
+                action = input("(R)ozpocznij rejestrację od początku\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ") 
+                if (action == "R" or action == "r"):
+                    self.newuser_reg()
+                elif (action == "P" or action =="p"):
+                    self.user_menu()
+        #action = input("Czy chcesz przypisać do swojego konta miasto ?\n(T)ak\n(N)ie\nTwój wybór: ")
+        #while (action != "T" and action != "t" and action != "N" and action != "n"):
+            #print()
+            #print("Wprowadzono niepoprawny klawisz")
+            #action = input("Czy chcesz przypisać do swojego konta miasto ?\n(T)ak\n(N)ie\nTwój wybór: ")
+        #if (action == "T" or action == "t"):
+        self.c.execute("select * from cities;")
+        result_newuser_cities = self.c.fetchall()
+        print()
+        print("Które z pośród podanych miast chcesz przypisać do swojego konta:")
+        print("ID", " Miasto")
+        for v in result_newuser_cities:
+            id = v[0]
+            city = v[1]
+            print("%-3s%-10s" % (id, city))
+        print()
+                
+    def user_panel(self, name):
+        self.name = name
         print()
         print(linia)
-        print("Witaj w panelu użytkownika")
+        print("Witaj " + name + " w panelu użytkownika")
+    
+    def check_e_mail_correct(self, e_mail): # sprawdza czy podany przez użytkownika ciąg jest adresem e-mail
+        i = 0
+        test = 0
+        while (i < len(e_mail)):
+            if (e_mail[i] == '@'):
+                test = 1
+            i = i + 1
+        return test   
     
 class Waiter:
     
@@ -135,6 +187,14 @@ class Waiter:
         print()
         print(linia)        
         print("Strefa kelnera")
+class Close:
+    
+    # Osobna klasa do zamykania aplikacji. 
+    
+    def __init__(self):
+        print()
+        print(linia)
+        print("Zamknięcie aplikacji. Do zobaczenia") 
 
 # Logo aplikacji
 
@@ -142,6 +202,8 @@ linia = "======================================="
 
 print(linia)
 print('Witaj w aplikacji "Wolny Stolik"')
+print(linia)
+print("Wersja bera | (c) Tomasz Prysak")
 print(linia)
 print("|    W W W   OOO   L      N   N  Y   Y")
 print("|    W W W  O   O  L      N   N  Y   Y")
