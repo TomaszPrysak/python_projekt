@@ -135,37 +135,37 @@ class User:
         while (newuser_pass1 != newuser_pass2):
             print()
             print("Hasła nie są identyczne")
-            action = input("(R)ozpocznij rejestrację od początku\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+            action = input("(W)prowadź hasło od początku\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
             while (action != "W" and action != "w" and action != "P" and action != "p"):
                 print()
-                print("Wprowadzono niepoprawny klawisz")  
-                action = input("(R)ozpocznij rejestrację od początku\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ") 
-                if (action == "R" or action == "r"):
-                    self.newuser_reg()
-                elif (action == "P" or action =="p"):
-                    self.user_menu()
-        #action = input("Czy chcesz przypisać do swojego konta miasto ?\n(T)ak\n(N)ie\nTwój wybór: ")
-        #while (action != "T" and action != "t" and action != "N" and action != "n"):
-            #print()
-            #print("Wprowadzono niepoprawny klawisz")
-            #action = input("Czy chcesz przypisać do swojego konta miasto ?\n(T)ak\n(N)ie\nTwój wybór: ")
-        #if (action == "T" or action == "t"):
+                print("Wprowadzono niepoprawny klawisz")
+                action = input("(W)prowadź hasło od początku\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+            if (action == "W" or action == "w"):
+                print()
+                newuser_pass1 = input("Podaj hasło: ")
+                newuser_pass2 = input("Powtórz hasło: ")
+            elif (action == "P" or action =="p"):
+                self.user_menu()                
         self.c.execute("select * from cities;")
         result_newuser_cities = self.c.fetchall()
         print()
+        print("Dodaj miasto do swojego konta")
         print("Które z pośród podanych miast chcesz przypisać do swojego konta:")
         print("ID", " Miasto")
         for v in result_newuser_cities:
             id = v[0]
             city = v[1]
-            print("%-3s%-10s" % (id, city))
+            print("%-4s%-10s" % (id, city))
         print()
+        action = input("Wprowadź numer miasta: (1) - (" + str(len(result_newuser_cities)) + ")\n(N)nie chcę dodać miasta do mojego konta\nTwój wybór: ")
                 
     def user_panel(self, name):
         self.name = name
         print()
         print(linia)
-        print("Witaj " + name + " w panelu użytkownika")
+        print("Witaj " + name)
+        print(linia)
+        print("MENU UŻYTKOWNIKA")
     
     def check_e_mail_correct(self, e_mail): # sprawdza czy podany przez użytkownika ciąg jest adresem e-mail
         i = 0
