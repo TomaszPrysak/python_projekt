@@ -16,24 +16,24 @@ class MenuStart:
         print(linia)
         print("MENU START")
         print("Wybierz rodzaj konta: ")
-        type_user = input("(U)żytkownik\n(K)elner\n(A)dministrator\n(W)wyjście z programu\nTwój wybór: ")
-        while (type_user != "W" and type_user != "w" and type_user != "U" and type_user != "u" and type_user != "K" and type_user != "k" and type_user != "A" and type_user != "a"):
+        action = input("(U)żytkownik\n(K)elner\n(A)dministrator\n(W)wyjście z programu\nTwój wybór: ")
+        while (action != "W" and action != "w" and action != "U" and action != "u" and action != "K" and action != "k" and action != "A" and action != "a"):
             print()
             print(linia)
             print("Wprowadzono niepoprawny klawisz")
             print("Wybierz rodzaj konta: ")
-            type_user = input("(U)żytkownik\n(K)elner\n(A)dministrator\n(W)wyjście z programu\nTwój wybór: ")
-        if (type_user == "U" or type_user == "u"):
+            action = input("(U)żytkownik\n(K)elner\n(A)dministrator\n(W)wyjście z programu\nTwój wybór: ")
+        if (action == "U" or action == "u"):
             db_user_file = open("db_user.txt", "r")
             db_user_pass = db_user_file.read()
             db_user_file.close()
             start = User(db_user_pass)        
-        elif (type_user == "K" or type_user == "k"):
+        elif (action == "K" or action == "k"):
             db_waiter_file = open("db_waiter.txt", "r")
             db_waiter_pass = db_waiter_file.read()
             db_waiter_file.close()
             start = Waiter(db_waiter_pass)        
-        elif (type_user == "A" or type_user == "a"):
+        elif (action == "A" or action == "a"):
             db_admin = input("Wprowadź hasło administratora: ")
             start = Admin(db_admin)              
         else:
@@ -59,6 +59,7 @@ class User:
         self.password = password
         self.conn = pymysql.connect("localhost", "users", self.password, "wolny_stolik")
         self.c = self.conn.cursor()
+        
         self.user_menu()
         
     def user_menu(self):
@@ -148,7 +149,7 @@ class User:
         self.c.execute("select * from cities;")
         result_newuser_cities = self.c.fetchall()
         print()
-        print("Chcesz do swojego konta dołączyć jedno z ponizszych miast ?")
+        print("Czy chcesz do swojego konta dołączyć jedno z ponizszych miast ?")
         print("---------------")
         print("ID  | Miasto")
         print("---------------")
@@ -220,7 +221,56 @@ class User:
         print("Witaj " + name)
         print(linia)
         print("MENU UŻYTKOWNIKA")
-        action = input("(S)zukaj restauracji\n(Z)arezerwuj stolik\n(U)stawienia konta\n(W)yloguj")
+        action = input("(S)zukaj WOLNY STOLIK\n(M)oje rezerwacje\n(U)stawienia konta\n(W)yloguj\nTwój wybór: ")
+        while (action != "S" and action != "s" and action != "M" and action != "m" and action != "U" and action != "u" and action != "W" and action != "w"):
+            print()
+            print(linia)
+            print("Wprowadzono niepoprawny klawisz")
+            print("Wybierz rodzaj konta: ")        
+            action = input("(S)zukaj WOLNY STOLIK\n(M)oje rezerwacje\n(U)stawienia konta\n(W)yloguj\nTwój wybór: ")
+        if (action == "S" or action == "s"):
+            self.search()
+        elif (action == "M" or action == "m"):
+            print("W budowie")
+        elif (action == "U" or action == "u"):
+            print("w budowie")
+        else:
+            self.user_menu()
+            
+    def search(self):
+        print()
+        print(linia)
+        print("MENU WOLNY STOLIK")
+        print("Powiedz jak bardzo jesteś głodny: ")
+        action = input("(J)uż jestem głodny! Szukaj WOLNY STOLIK teraz!\n(B)ędę głodny w przyszłości. Zarezerwuj WOLNY STOLIK na później\n(P)owrót do MENU UŻYTKOWNIKA\nTwój wybór: ")
+        while (action != "J" and action != "j" and action != "B" and action != "b" and action != "P" and action != "p"):
+            print()
+            print(linia)
+            print("Wprowadzono niepoprawny klawisz")
+            print("Powiedz jak bardzo jesteś głodny: ")        
+            action = input("(J)uż jestem głodny! Szukaj WOLNY STOLIK teraz!\n(B)ędę głodny w przyszłości. Zarezerwuj WOLNY STOLIK na kiedyś\n(P)owrót do MENU UŻYTKOWNIKA")       
+        if (action == "J" or action == "j"):
+            self.c.execute("select id_rest, rest_name, type_cuisine, round(avg(value_rating),1) as 'Ocena' from restaurants natural left join rating natural left join cities natural right join cuisines where city_name = 'Warszawa' group by rest_name order by city_name desc, Ocena desc;")
+            result_search_now = self.c.fetchall()
+            i = 1
+            print()
+            print("Restauracje w mieście przypisanym do Twojego konta w których możesz zaspokoić swój głód:")
+            print("-------------------------------------------------")
+            print("ID  | Restauracja         | Rodzaj kuchni | Ocena")
+            print("-------------------------------------------------")         
+            for v in result_search_now:
+                id = i
+                rest = v[1]
+                cuisine = v[2]
+                rate = v[3]
+                print("%-4s| %-20s| %-14s| %-4s" % (id, rest, cuisine, rate))
+                i = i + 1
+            print("-------------------------------------------------")
+            action = input("Wprowadź numer restauracji: ")
+        elif (action == "B" or action == "b"):
+            print("W budowie")
+        elif (action == "P" or action == "p"):
+            self.user_panel
     
     def check_e_mail_correct(self, e_mail): # sprawdza czy podany przez użytkownika login jest już zajęty lub jeżeli nie jest to czy podany ciąg znaków jest adresem e-mail (czy zawiera symbol "@") 
         i = 0
@@ -259,29 +309,29 @@ class Close:
 
 # Logo aplikacji
 
-linia = "======================================="
+linia = "=========================================="
 
 print(linia)
 print('Witaj w aplikacji "Wolny Stolik"')
 print(linia)
 print("Wersja bera | (c) Tomasz Prysak")
 print(linia)
-print("|    W W W   OOO   L      N   N  Y   Y")
-print("|    W W W  O   O  L      N   N  Y   Y")
-print("|    W W W  O   O  L      NN  N   Y Y ")
-print("|    W W W  O   O  L      N N N    Y  ")
-print("|    W W W  O   O  L      N  NN    Y  ")
-print("|    W W W  O   O  L      N   N    Y  ")
-print("|     W W    OOO   LLLLL  N   N    Y  ")
-print("|")
-print("|")
-print("|   SSS   TTTTT   OOO   L      I  K   K")
-print("|  S   S    T    O   O  L      I  K  K ")
-print("|  S        T    O   O  L      I  K K  ")
-print("|   SSS     T    O   O  L      I  KK   ")
-print("|      S    T    O   O  L      I  K K  ")
-print("|  S   S    T    O   O  L      I  K  K ")
-print("|   SSS     T     OOO   LLLLL  I  K   K")
+print("|    W W W   OOO   L      N   N  Y   Y   |")
+print("|    W W W  O   O  L      N   N  Y   Y   |")
+print("|    W W W  O   O  L      NN  N   Y Y    |")
+print("|    W W W  O   O  L      N N N    Y     |")
+print("|    W W W  O   O  L      N  NN    Y     |")
+print("|    W W W  O   O  L      N   N    Y     |")
+print("|     W W    OOO   LLLLL  N   N    Y     |")
+print("|                                        |")
+print("|                                        |")
+print("|   SSS   TTTTT   OOO   L      I  K   K  |")
+print("|  S   S    T    O   O  L      I  K  K   |")
+print("|  S        T    O   O  L      I  K K    |")
+print("|   SSS     T    O   O  L      I  KK     |")
+print("|      S    T    O   O  L      I  K K    |")
+print("|  S   S    T    O   O  L      I  K  K   |")
+print("|   SSS     T     OOO   LLLLL  I  K   K  |")
 print(linia)
 next = input("Naciśnij ENTER aby kontynuować: ")
 print(linia)
