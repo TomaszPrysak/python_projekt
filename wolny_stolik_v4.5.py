@@ -24,21 +24,20 @@ class MenuStart:
             print("Wybierz rodzaj konta: ")
             type_user = input("(U)żytkownik\n(K)elner\n(A)dministrator\n(W)wyjście z programu\nTwój wybór: ")
         if (type_user == "U" or type_user == "u"):
-            database_user_open_file = open("database_user.txt", "r")
-            database_user_text = database_user_open_file.read()
-            database_user_open_file.close()
-            start = User(database_user_text)        
+            db_user_file = open("db_user.txt", "r")
+            db_user_pass = db_user_file.read()
+            db_user_file.close()
+            start = User(db_user_pass)        
         elif (type_user == "K" or type_user == "k"):
-            database_waiter_open_file = open("database_waiter.txt", "r")
-            database_waiter_text = database_waiter_open_file.read()
-            database_waiter_open_file.close()
-            start = Waiter(database_waiter_text)        
+            db_waiter_file = open("db_waiter.txt", "r")
+            db_waiter_pass = db_waiter_file.read()
+            db_waiter_file.close()
+            start = Waiter(db_waiter_pass)        
         elif (type_user == "A" or type_user == "a"):
-            database_admin = input("Wprowadź hasło administratora: ")
-            start = Admin(database_admin)        
+            db_admin = input("Wprowadź hasło administratora: ")
+            start = Admin(db_admin)              
         else:
             close = Close()        
-
 
 class Admin:
     
@@ -50,7 +49,7 @@ class Admin:
         self.c = self.conn.cursor()
         print()
         print(linia)        
-        print("Zalogowano jako administrator")
+        print("Zalogowano jako administrator")       
 
 class User:
     
@@ -120,7 +119,7 @@ class User:
         newuser_e_mail = input("Podaj adres e-mail (bedzie wykorzystywany do logowania): ")
         while (self.check_e_mail_correct(newuser_e_mail) != 1):
             print()
-            print("Podany ciąg nie jest adresem e-mail")
+            print("Podany adres e-mail jest już zajęty lub podany ciąg znaków nie jest adresem e-mail")
             action = input("(W)prowadz e-mail ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
             while (action != "W" and action != "w" and action != "P" and action != "p"):
                 print()
@@ -149,16 +148,71 @@ class User:
         self.c.execute("select * from cities;")
         result_newuser_cities = self.c.fetchall()
         print()
-        print("Dodaj miasto do swojego konta")
-        print("Które z pośród podanych miast chcesz przypisać do swojego konta:")
-        print("ID", " Miasto")
+        print("Chcesz do swojego konta dołączyć jedno z ponizszych miast ?")
+        print("---------------")
+        print("ID  | Miasto")
+        print("---------------")
         for v in result_newuser_cities:
             id = v[0]
             city = v[1]
-            print("%-4s%-10s" % (id, city))
-        print()
-        action = input("Wprowadź numer miasta: (1) - (" + str(len(result_newuser_cities)) + ")\n(N)nie chcę dodać miasta do mojego konta\nTwój wybór: ")
-                
+            print("%-4s| %-10s" % (id, city))
+        print("---------------")
+        action = input("(T)ak\n(N)ie\nTwój wybór: ")
+        while (action != "T" and action != "t" and action != "N" and action != "n"):
+            print()
+            print("Wprowadzono niepoprawny klawisz")
+            action = input("(T)ak\n(N)ie\nTwój wybór: ")
+        if (action == "T" or action == "t"):
+            action = input("Wprowadź numer miasta: (1) - (" + str(len(result_newuser_cities)) + "): ")
+            self.c.execute("select * from cities where id_city = '" + action + "';")
+            result_newuser_cities_2 = self.c.fetchall()
+            while (len(result_newuser_cities_2) == 0):
+                print()
+                print("Wprowadzono niprawidłowy numer miasta")
+                action = input("Wprowadź prawidłowy numer miasta: (1) - (" + str(len(result_newuser_cities)) + "): ")
+                self.c.execute("select * from cities where id_city = '" + action + "';")
+                result_newuser_cities_2 = self.c.fetchall()
+            print()
+            print("Wybrałeś miasto: " + result_newuser_cities_2[0][1])
+            action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+            while (action != "" and action != "P" and action != "p"):
+                print()
+                print("Wprowadzono niepoprawny klawisz")             
+                action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+            if (action == ""):
+                self.c.execute('insert into users (e_mail, pass, id_city, date_login) values ("' + newuser_e_mail + '", "' + newuser_pass1 + '", ' + str(result_newuser_cities_2[0][0]) + ', now());')
+                self.conn.commit
+                print()
+                print("Konto użytkownika " + newuser_e_mail + " utworzone pomyślnie !")
+                action = input("Naciśnij ENTER, aby przejść do menu logowania: ")
+                while (action != ""):
+                    print()
+                    print("Wprowadzono niepoprawny klawisz")
+                    action = input("Naciśnij ENTER, aby przejść do menu logowania: ")
+                self.user_menu()
+            elif(action != "P" and action != "p"):
+                self.user_menu()
+        elif (action == "N" or action =="n"):
+            print()
+            action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+            while (action != "" and action != "P" and action != "p"):
+                print()
+                print("Wprowadzono niepoprawny klawisz")            
+                action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+            if (action == ""):
+                self.c.execute('insert into users (e_mail, pass, date_login) values ("' + newuser_e_mail + '", "' + newuser_pass1 + '", now());')
+                self.conn.commit
+                print()
+                print("Konto użytkownika " + newuser_e_mail + " utworzone pomyślnie !")
+                action = input("Naciśnij ENTER, aby przejść do menu logowania: ")
+                while (action != ""):
+                    print()
+                    print("Wprowadzono niepoprawny klawisz")
+                    action = input("Naciśnij ENTER, aby przejść do menu logowania: ")
+                self.user_menu()
+            elif (action != "P" and action != "p"):
+                self.user_menu() 
+            
     def user_panel(self, name):
         self.name = name
         print()
@@ -166,14 +220,20 @@ class User:
         print("Witaj " + name)
         print(linia)
         print("MENU UŻYTKOWNIKA")
+        action = input("(S)zukaj restauracji\n(Z)arezerwuj stolik\n(U)stawienia konta\n(W)yloguj")
     
-    def check_e_mail_correct(self, e_mail): # sprawdza czy podany przez użytkownika ciąg jest adresem e-mail
+    def check_e_mail_correct(self, e_mail): # sprawdza czy podany przez użytkownika login jest już zajęty lub jeżeli nie jest to czy podany ciąg znaków jest adresem e-mail (czy zawiera symbol "@") 
         i = 0
         test = 0
-        while (i < len(e_mail)):
-            if (e_mail[i] == '@'):
-                test = 1
-            i = i + 1
+        self.c.execute("select e_mail, pass from users where e_mail = '" + e_mail + "';")
+        result = self.c.fetchall()        
+        if (len(result) !=0):
+            test = 0
+        else:
+            while (i < len(e_mail)):
+                if (e_mail[i] == '@'):
+                    test = 1
+                i = i + 1
         return test   
     
 class Waiter:
@@ -187,6 +247,7 @@ class Waiter:
         print()
         print(linia)        
         print("Strefa kelnera")
+        
 class Close:
     
     # Osobna klasa do zamykania aplikacji. 
