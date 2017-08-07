@@ -12,3 +12,5 @@ b) rezerwacja na konkretny dzieñ i godzinê (inny dzieñ ni¿ aktualny),
 4. Wystawienie oceny restauracji.
 
 Program korzysta z bazy danych wolny_stolik_v4.5
+
+PROJEKT W TRAKCIE ROZWOJU
