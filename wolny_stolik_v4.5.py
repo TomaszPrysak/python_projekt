@@ -36,8 +36,10 @@ class MenuStart:
         elif (action == "A" or action == "a"):
             db_admin = input("Wprowadź hasło administratora: ")
             start = Admin(db_admin)              
-        else:
-            close = Close()        
+        else:     
+            print()
+            print(linia)
+            print("Zamknięcie aplikacji. Do zobaczenia")        
 
 class Admin:
     
@@ -49,7 +51,8 @@ class Admin:
         self.c = self.conn.cursor()
         print()
         print(linia)        
-        print("Zalogowano jako administrator")       
+        print("Zalogowano jako administrator")
+        print("W budowie")
 
 class User:
     
@@ -59,13 +62,12 @@ class User:
         self.password = password
         self.conn = pymysql.connect("localhost", "users", self.password, "wolny_stolik")
         self.c = self.conn.cursor()
-        
         self.user_menu()
         
     def user_menu(self):
         print()
         print(linia)        
-        print("MENU LOGOWANIA")
+        print("MENU LOGOWANIA UŻYTKOWNIKA")
         action = input("(L)ogowanie istniejącego użytkownika\n(R)ejestracja nowego użytkownika\n(P)owrót do MENU START\nTwój wybór: ")
         while (action != "P" and action != "p" and action != "R" and action != "r" and action != "L" and action != "l"):
             print()
@@ -76,6 +78,7 @@ class User:
         elif (action == "R" or action == "r"):
             self.newuser_reg()
         elif (action == "P" or action == "p"):
+            self.conn.close()
             start = MenuStart()
         
     def user_log(self):
@@ -88,11 +91,11 @@ class User:
         while (len(result_user_log) == 0):
             print()
             print("Podany e-mail i/lub hasło są nieprawidłowe")
-            action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+            action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA\nTwój wybór: ")
             while (action != "W" and action != "w" and action != "P" and action != "p"):
                 print()
                 print("Wprowadzono niepoprawny klawisz")  
-                action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+                action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA\nTwój wybór: ")
             if (action == "W" or action == "w"):
                 self.user_log()
             elif (action == "P" or action =="p"):
@@ -103,11 +106,11 @@ class User:
             else:
                 print()
                 print("Podany e-mail i/lub hasło są nieprawidłowe")
-                action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+                action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA\nTwój wybór: ")
                 while (action != "W" and action != "w" and action != "P" and action != "p"):
                     print()
                     print("Wprowadzono niepoprawny klawisz")  
-                    action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+                    action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA\nTwój wybór: ")
                 if (action == "W" or action == "w"):
                     self.user_log()
                 elif (action == "P" or action =="p"):
@@ -121,11 +124,11 @@ class User:
         while (self.check_e_mail_correct(newuser_e_mail) != 1):
             print()
             print("Podany adres e-mail jest już zajęty lub podany ciąg znaków nie jest adresem e-mail")
-            action = input("(W)prowadz e-mail ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+            action = input("(W)prowadz e-mail ponownie\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA\nTwój wybór: ")
             while (action != "W" and action != "w" and action != "P" and action != "p"):
                 print()
                 print("Wprowadzono niepoprawny klawisz")  
-                action = input("(W)prowadz e-mail ponownie\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+                action = input("(W)prowadz e-mail ponownie\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA\nTwój wybór: ")
             if (action == "W" or action == "w"):
                 self.newuser_reg()
             elif (action == "P" or action =="p"):
@@ -135,11 +138,11 @@ class User:
         while (newuser_pass1 != newuser_pass2):
             print()
             print("Hasła nie są identyczne")
-            action = input("(W)prowadź hasło od początku\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+            action = input("(W)prowadź hasło od początku\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA\nTwój wybór: ")
             while (action != "W" and action != "w" and action != "P" and action != "p"):
                 print()
                 print("Wprowadzono niepoprawny klawisz")
-                action = input("(W)prowadź hasło od początku\n(P)owrót do MENU LOGOWANIA\nTwój wybór: ")
+                action = input("(W)prowadź hasło od początku\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA\nTwój wybór: ")
             if (action == "W" or action == "w"):
                 print()
                 newuser_pass1 = input("Podaj hasło: ")
@@ -175,14 +178,14 @@ class User:
                 result_newuser_cities_2 = self.c.fetchall()
             print()
             print("Wybrałeś miasto: " + result_newuser_cities_2[0][1])
-            action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+            action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
             while (action != "" and action != "P" and action != "p"):
                 print()
                 print("Wprowadzono niepoprawny klawisz")             
-                action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+                action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
             if (action == ""):
                 self.c.execute('insert into users (e_mail, pass, id_city, date_login) values ("' + newuser_e_mail + '", "' + newuser_pass1 + '", ' + str(result_newuser_cities_2[0][0]) + ', now());')
-                self.conn.commit
+                self.conn.commit()
                 print()
                 print("Konto użytkownika " + newuser_e_mail + " utworzone pomyślnie !")
                 action = input("Naciśnij ENTER, aby przejść do menu logowania: ")
@@ -195,14 +198,14 @@ class User:
                 self.user_menu()
         elif (action == "N" or action =="n"):
             print()
-            action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+            action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
             while (action != "" and action != "P" and action != "p"):
                 print()
                 print("Wprowadzono niepoprawny klawisz")            
-                action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+                action = input("Naciśnij ENTER, aby potwierdzić utworzenie użytkownika " + newuser_e_mail + "\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
             if (action == ""):
                 self.c.execute('insert into users (e_mail, pass, date_login) values ("' + newuser_e_mail + '", "' + newuser_pass1 + '", now());')
-                self.conn.commit
+                self.conn.commit()
                 print()
                 print("Konto użytkownika " + newuser_e_mail + " utworzone pomyślnie !")
                 action = input("Naciśnij ENTER, aby przejść do menu logowania: ")
@@ -214,43 +217,46 @@ class User:
             elif (action != "P" and action != "p"):
                 self.user_menu() 
             
-    def user_panel(self, name):
-        self.name = name
+    def user_panel(self, user_name):
+        self.name = user_name
         print()
         print(linia)
-        print("Witaj " + name)
+        print("Witaj " + self.name)
         print(linia)
         print("MENU UŻYTKOWNIKA")
         action = input("(S)zukaj WOLNY STOLIK\n(M)oje rezerwacje\n(U)stawienia konta\n(W)yloguj\nTwój wybór: ")
         while (action != "S" and action != "s" and action != "M" and action != "m" and action != "U" and action != "u" and action != "W" and action != "w"):
             print()
             print(linia)
-            print("Wprowadzono niepoprawny klawisz")
-            print("Wybierz rodzaj konta: ")        
+            print("Wprowadzono niepoprawny klawisz")        
             action = input("(S)zukaj WOLNY STOLIK\n(M)oje rezerwacje\n(U)stawienia konta\n(W)yloguj\nTwój wybór: ")
         if (action == "S" or action == "s"):
-            self.search()
+            self.wolny_stolik()
         elif (action == "M" or action == "m"):
+            print()
             print("W budowie")
+            
         elif (action == "U" or action == "u"):
+            print()
             print("w budowie")
+            
         else:
             self.user_menu()
             
-    def search(self):
+    def wolny_stolik(self):
         print()
         print(linia)
         print("MENU WOLNY STOLIK")
         print("Powiedz jak bardzo jesteś głodny: ")
-        action = input("(J)uż jestem głodny! Szukaj WOLNY STOLIK teraz!\n(B)ędę głodny w przyszłości. Zarezerwuj WOLNY STOLIK na później\n(P)owrót do MENU UŻYTKOWNIKA\nTwój wybór: ")
+        action = input("(J)uż jestem głodny! Szukaj aktualnie WOLNY STOLIK\n(B)ędę głodny w przyszłości. Dokonaj rezerwacji WOLNY STOLIK z wyprzedzeniem\n(P)owrót do MENU UŻYTKOWNIKA\nTwój wybór: ")
         while (action != "J" and action != "j" and action != "B" and action != "b" and action != "P" and action != "p"):
             print()
             print(linia)
             print("Wprowadzono niepoprawny klawisz")
             print("Powiedz jak bardzo jesteś głodny: ")        
-            action = input("(J)uż jestem głodny! Szukaj WOLNY STOLIK teraz!\n(B)ędę głodny w przyszłości. Zarezerwuj WOLNY STOLIK na kiedyś\n(P)owrót do MENU UŻYTKOWNIKA")       
+            action = input("(J)uż jestem głodny! Szukaj aktualnie WOLNY STOLIK\n(B)ędę głodny w przyszłości. Dokonaj rezerwacji WOLNY STOLIK z wyprzedzeniem\n(P)owrót do MENU UŻYTKOWNIKA\nTwój wybór: ")       
         if (action == "J" or action == "j"):
-            self.c.execute("select id_rest, rest_name, type_cuisine, round(avg(value_rating),1) as 'Ocena' from restaurants natural left join rating natural left join cities natural right join cuisines where city_name = 'Warszawa' group by rest_name order by city_name desc, Ocena desc;")
+            self.c.execute("select id_rest, rest_name, type_cuisine, round(avg(value_rating),1) as 'Ocena' from restaurants natural left join rating natural left join cities natural right join cuisines where city_name = ((select city_name from cities natural left join users where e_mail = '" + self.name + "')) group by rest_name order by city_name desc, Ocena desc;")
             result_search_now = self.c.fetchall()
             i = 1
             print()
@@ -259,7 +265,7 @@ class User:
             print("ID  | Restauracja         | Rodzaj kuchni | Ocena")
             print("-------------------------------------------------")         
             for v in result_search_now:
-                id = i
+                id = v[0]
                 rest = v[1]
                 cuisine = v[2]
                 rate = v[3]
@@ -268,7 +274,9 @@ class User:
             print("-------------------------------------------------")
             action = input("Wprowadź numer restauracji: ")
         elif (action == "B" or action == "b"):
+            print()
             print("W budowie")
+            
         elif (action == "P" or action == "p"):
             self.user_panel
     
@@ -293,19 +301,116 @@ class Waiter:
     def __init__(self, password):
         self.password = password
         self.conn = pymysql.connect("localhost", "waiters", self.password, "wolny_stolik")
-        self.c = self.conn.cursor()   
+        self.c = self.conn.cursor() 
+        self.waiter_menu()        
+        
+    def waiter_menu(self):
         print()
         print(linia)        
-        print("Strefa kelnera")
-        
-class Close:
-    
-    # Osobna klasa do zamykania aplikacji. 
-    
-    def __init__(self):
+        print("MENU LOGOWANIA KELNERA")
+        print("Stworzenie nowego użytkownika typu kelner wymaga kontaktu z administratorem")
+        action = input("(L)ogowanie kelnera\n(P)owrót do MENU START\nTwój wybór: ")
+        while (action != "P" and action != "p" and action != "L" and action != "l"):
+            print()
+            print("Wprowadzono niepoprawny klawisz")            
+            action = input("(L)ogowanie kelnera\n(P)owrót do MENU START\nTwój wybór: ")
+        if (action == "L" or action == "l"):
+            self.waiter_log()
+        elif (action == "P" or action == "p"):
+                self.conn.close()
+                start = MenuStart()   
+                
+    def waiter_log(self):
         print()
         print(linia)
-        print("Zamknięcie aplikacji. Do zobaczenia") 
+        waiter_login = input("Podaj login: ")
+        waiter_pass = input("Podaj hasło: ")
+        self.c.execute("select login, pass, rest_name from waiters natural left join restaurants where login = '" + waiter_login + "';")
+        result_waiter_log = self.c.fetchall()
+        while (len(result_waiter_log) == 0):
+            print()
+            print("Podany login i/lub hasło są nieprawidłowe")
+            action = input("(W)prowadź login i hasło ponownie\n(P)owrót do MENU LOGOWANIA KELNERA\nTwój wybór: ")
+            while (action != "W" and action != "w" and action != "P" and action != "p"):
+                print()
+                print("Wprowadzono niepoprawny klawisz")  
+                action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA KELNERA\nTwój wybór: ")
+            if (action == "W" or action == "w"):
+                self.waiter_log()
+            elif (action == "P" or action =="p"):
+                self.waiter_menu()
+        if (waiter_login == result_waiter_log[0][0]):
+            if (waiter_pass == result_waiter_log[0][1]):
+                self.waiter_panel(waiter_login, result_waiter_log[0][2])
+            else:
+                print()
+                print("Podany login i/lub hasło są nieprawidłowe")
+                action = input("(W)prowadź login i hasło ponownie\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA\nTwój wybór: ")
+                while (action != "W" and action != "w" and action != "P" and action != "p"):
+                    print()
+                    print("Wprowadzono niepoprawny klawisz")  
+                    action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA\nTwój wybór: ")
+                if (action == "W" or action == "w"):
+                    self.waiter_log()
+                elif (action == "P" or action =="p"):
+                    self.waiter_menu()      
+    
+    def waiter_panel(self, waiter_name, rest_name):
+        self.waiter_name = waiter_name
+        self.rest_name = rest_name
+        print()
+        print(linia)
+        print("Kelner: " + self.waiter_name + " | Restauracja: " + self.rest_name)
+        print(linia)
+        print("MENU KELNERA")
+        action = input("(O)twórz nowy rachunek\n(Z)amknij bieżący rachunek\n(S)prawdź rezerwacje\n(H)istoria konta\n(W)yloguj\nTwój wybór: ")       
+        while (action != "O" and action != "o" and action != "Z" and action != "z" and action != "S" and action != "s" and action != "H" and action != "h" and action != "W" and action != "w"):
+            print()
+            print(linia)
+            print("Wprowadzono niepoprawny klawisz")        
+            action = input("(O)twórz nowy rachunek\n(Z)amknij bieżący rachunek\n(S)prawdź rezerwacje\n(H)istoria konta\n(W)yloguj\nTwój wybór: ")
+        if (action == "O" or action == "o"):
+            self.occupancy_start()
+        elif (action == "Z" or action == "z"):
+            self.occupancy_stop()
+        elif (action == "S" or action == "s"):
+            self.booking_check()
+        elif (action == "H" or action == "h"):
+            self.profile_history()
+        else:
+            self.waiter_menu()
+            
+    def occupancy_start(self):
+        print()
+        print("W budowie")
+        self.c.execute("select nr_table, qty_chairs from type_tables natural left join restaurants where rest_name = '" + self.rest_name + "';")
+        result_search_now = self.c.fetchall()        
+        i = 1
+        print()
+        print("Aktualny statusstolików:")
+        print("-------------------------------------------------")
+        print("NR STOLIKA | Ilość krzeseł przy stoliku | Status")
+        print("-------------------------------------------------")         
+        for v in result_search_now:
+            nr = v[0]
+            qty = v[1]
+            stat = "test"
+            print("%-11s| %-27s| %-6s" % (nr, qty,stat))
+            i = i + 1
+        print("-------------------------------------------------")
+        occ_start = input("Wybierz NR STOLIKA aby otworzyć rachunek: ")
+        
+    def occupancy_stop(self):
+        print()
+        print("W budowie")
+        
+    def booking_check(self):
+        print()
+        print("W budowie")
+        
+    def profile_history(self):
+        print()
+        print("W budowie")    
 
 # Logo aplikacji
 
@@ -314,7 +419,7 @@ linia = "=========================================="
 print(linia)
 print('Witaj w aplikacji "Wolny Stolik"')
 print(linia)
-print("Wersja bera | (c) Tomasz Prysak")
+print("Wersja beta | (c) Tomasz Prysak")
 print(linia)
 print("|    W W W   OOO   L      N   N  Y   Y   |")
 print("|    W W W  O   O  L      N   N  Y   Y   |")
@@ -334,7 +439,6 @@ print("|  S   S    T    O   O  L      I  K  K   |")
 print("|   SSS     T     OOO   LLLLL  I  K   K  |")
 print(linia)
 next = input("Naciśnij ENTER aby kontynuować: ")
-print(linia)
 
 while (next != ""):
     print()
