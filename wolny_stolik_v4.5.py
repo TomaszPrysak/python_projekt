@@ -84,9 +84,9 @@ class User:
     def user_log(self):
         print()
         print(linia)
-        user_e_mail = input("Podaj e-mail: ")
+        self.user_e_mail = input("Podaj e-mail: ")
         user_pass = input("Podaj hasło: ")
-        self.c.execute("select e_mail, pass from users where e_mail = '" + user_e_mail + "';")
+        self.c.execute("select e_mail, pass from users where e_mail = '" + self.user_e_mail + "';")
         result_user_log = self.c.fetchall()
         while (len(result_user_log) == 0):
             print()
@@ -100,9 +100,9 @@ class User:
                 self.user_log()
             elif (action == "P" or action =="p"):
                 self.user_menu()
-        if (user_e_mail == result_user_log[0][0]):
+        if (self.user_e_mail == result_user_log[0][0]):
             if (user_pass == result_user_log[0][1]):
-                self.user_panel(user_e_mail)
+                self.user_panel()
             else:
                 print()
                 print("Podany e-mail i/lub hasło są nieprawidłowe")
@@ -217,14 +217,13 @@ class User:
             elif (action != "P" and action != "p"):
                 self.user_menu() 
             
-    def user_panel(self, user_name):
-        self.name = user_name
+    def user_panel(self):
         print()
         print(linia)
-        print("Witaj " + self.name)
+        print("Witaj " + self.user_e_mail)
         print(linia)
         print("MENU UŻYTKOWNIKA")
-        action = input("(S)zukaj WOLNY STOLIK\n(M)oje rezerwacje\n(U)stawienia konta\n(W)yloguj\nTwój wybór: ")
+        action = input("(S)zukaj WOLNY STOLIK\n(M)oje rezerwacje\n(W)yloguj\nTwój wybór: ")
         while (action != "S" and action != "s" and action != "M" and action != "m" and action != "U" and action != "u" and action != "W" and action != "w"):
             print()
             print(linia)
@@ -235,11 +234,6 @@ class User:
         elif (action == "M" or action == "m"):
             print()
             print("W budowie")
-            
-        elif (action == "U" or action == "u"):
-            print()
-            print("w budowie")
-            
         else:
             self.user_menu()
             
@@ -276,10 +270,8 @@ class User:
         elif (action == "B" or action == "b"):
             print()
             print("W budowie")
-            
         elif (action == "P" or action == "p"):
-            self.user_panel
-    
+            self.user_panel()
     def check_e_mail_correct(self, e_mail): # sprawdza czy podany przez użytkownika login jest już zajęty lub jeżeli nie jest to czy podany ciąg znaków jest adresem e-mail (czy zawiera symbol "@") 
         i = 0
         test = 0
@@ -316,16 +308,16 @@ class Waiter:
             action = input("(L)ogowanie kelnera\n(P)owrót do MENU START\nTwój wybór: ")
         if (action == "L" or action == "l"):
             self.waiter_log()
-        elif (action == "P" or action == "p"):
+        else:
                 self.conn.close()
                 start = MenuStart()   
                 
     def waiter_log(self):
         print()
         print(linia)
-        waiter_login = input("Podaj login: ")
+        self.waiter_login = input("Podaj login: ")
         waiter_pass = input("Podaj hasło: ")
-        self.c.execute("select login, pass, rest_name from waiters natural left join restaurants where login = '" + waiter_login + "';")
+        self.c.execute("select login, pass, rest_name from waiters natural left join restaurants where login = '" + self.waiter_login + "';")
         result_waiter_log = self.c.fetchall()
         while (len(result_waiter_log) == 0):
             print()
@@ -337,11 +329,12 @@ class Waiter:
                 action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA KELNERA\nTwój wybór: ")
             if (action == "W" or action == "w"):
                 self.waiter_log()
-            elif (action == "P" or action =="p"):
+            else:
                 self.waiter_menu()
-        if (waiter_login == result_waiter_log[0][0]):
+        if (self.waiter_login == result_waiter_log[0][0]):
             if (waiter_pass == result_waiter_log[0][1]):
-                self.waiter_panel(waiter_login, result_waiter_log[0][2])
+                self.waiter_rest = result_waiter_log[0][2]
+                self.waiter_panel()
             else:
                 print()
                 print("Podany login i/lub hasło są nieprawidłowe")
@@ -352,18 +345,15 @@ class Waiter:
                     action = input("(W)prowadź e-mail i hasło ponownie\n(P)owrót do MENU LOGOWANIA UŻYTKOWNIKA\nTwój wybór: ")
                 if (action == "W" or action == "w"):
                     self.waiter_log()
-                elif (action == "P" or action =="p"):
+                else:
                     self.waiter_menu()      
-    
-    def waiter_panel(self, waiter_name, rest_name):
-        self.waiter_name = waiter_name
-        self.rest_name = rest_name
+    def waiter_panel(self):
         print()
         print(linia)
-        print("Kelner: " + self.waiter_name + " | Restauracja: " + self.rest_name)
+        print("Kelner: " + self.waiter_login + " | Restauracja: " + self.waiter_rest)
         print(linia)
         print("MENU KELNERA")
-        action = input("(O)twórz nowy rachunek\n(Z)amknij bieżący rachunek\n(S)prawdź rezerwacje\n(H)istoria konta\n(W)yloguj\nTwój wybór: ")       
+        action = input("(O)twórz nowy rachunek\n(Z)amknij bieżący rachunek\n(S)prawdź rezerwacje\n(W)yloguj\nTwój wybór: ")       
         while (action != "O" and action != "o" and action != "Z" and action != "z" and action != "S" and action != "s" and action != "H" and action != "h" and action != "W" and action != "w"):
             print()
             print(linia)
@@ -375,30 +365,73 @@ class Waiter:
             self.occupancy_stop()
         elif (action == "S" or action == "s"):
             self.booking_check()
-        elif (action == "H" or action == "h"):
-            self.profile_history()
         else:
-            self.waiter_menu()
-            
+            self.waiter_menu()   
     def occupancy_start(self):
+        self.c.execute("select nr_table, qty_chairs from type_tables natural left join restaurants where rest_name = '" + self.waiter_rest + "';")
+        result_search_now = self.c.fetchall() 
+        napis1 = "NR STOLIKA"
+        napis2 = "Ilość krzeseł przy stoliku"
+        napis3 = "Status"
         print()
-        print("W budowie")
-        self.c.execute("select nr_table, qty_chairs from type_tables natural left join restaurants where rest_name = '" + self.rest_name + "';")
-        result_search_now = self.c.fetchall()        
+        print("Aktualny status stolików:")
+        print("-"*85)
+        print("| %-11s| %-27s| %-39s |" % (napis1, napis2, napis3))
+        print("-"*85)
         i = 1
-        print()
-        print("Aktualny statusstolików:")
-        print("-------------------------------------------------")
-        print("NR STOLIKA | Ilość krzeseł przy stoliku | Status")
-        print("-------------------------------------------------")         
         for v in result_search_now:
-            nr = v[0]
-            qty = v[1]
-            stat = "test"
-            print("%-11s| %-27s| %-6s" % (nr, qty,stat))
-            i = i + 1
-        print("-------------------------------------------------")
-        occ_start = input("Wybierz NR STOLIKA aby otworzyć rachunek: ")
+            self.c.execute("select rest_name, nr_table, login, qty_chairs, time_occ_start from occupancy natural join type_tables natural join restaurants natural left join waiters where rest_name = '" + self.waiter_rest + "' and nr_table = '" + str(i) + "';")
+            result_is_it_occ = self.c.fetchall()
+            if (len(result_is_it_occ) == 0):
+                nr = v[0]
+                qty = v[1]
+                stat = "WOLNY"
+                print("| %-11s| %-27s| %-39s |" % (nr, qty,stat))
+                print("-"*85)
+            else:
+                nr = v[0]
+                qty = v[1]
+                stat = "ZAJĘTY | Obsługiwany przez: " + result_is_it_occ[0][2]
+                print("| %-11s| %-27s| %-39s |" % (nr, qty,stat,))
+                print("-"*85)           
+            i = i + 1 
+        nr_table = input("Wybierz NR wolnego STOLIKA aby otworzyć rachunek: ") 
+        self.c.execute("select rest_name, nr_table, login, qty_chairs, time_occ_start from occupancy natural join type_tables natural join restaurants natural left join waiters where rest_name = '" + self.waiter_rest + "' and nr_table = '" + nr_table + "';")
+        result_is_it_occ = self.c.fetchall()
+        self.c.execute("select rest_name, nr_table, qty_chairs from type_tables natural left join restaurants where nr_table = '" + nr_table + "' and rest_name = '" + self.waiter_rest + "';")
+        result_is_nr_table_in_restaurant = self.c.fetchall()
+        while(len(result_is_nr_table_in_restaurant) == 0 or len(result_is_it_occ) == 1):
+            print()
+            print("Wprowadzono błędny nr stolik lub stolik jest już zanjęty")
+            nr_table = input("Wybierz NR wolnego STOLIKA aby otworzyć rachunek\n(P)owrót do MENU KELNERA\nTwój wybór: ")
+            self.c.execute("select rest_name, nr_table, login, qty_chairs, time_occ_start from occupancy natural join type_tables natural join restaurants natural left join waiters where rest_name = '" + self.waiter_rest + "' and nr_table = '" + nr_table + "';")
+            result_is_it_occ = self.c.fetchall()
+            self.c.execute("select rest_name, nr_table, qty_chairs from type_tables natural left join restaurants where nr_table = '" + nr_table + "' and rest_name = '" + self.waiter_rest + "';")
+            result_is_nr_table_in_restaurant = self.c.fetchall()      
+        print()
+        print("Wybrano stolik: " + nr_table)
+        action = input("Naciśnij ENTER, aby potwierdzić otwarcie rachunku dla stolika: " + nr_table + "\n(P)owrót do MENU KELNERA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+        while (action != "" and action != "P" and action != "p"):
+            print()
+            print("Wprowadzono niepoprawny klawisz")             
+            action = input("Naciśnij ENTER, aby potwierdzić otwarcie rachunku dla stolika: " + nr_table + "\n(P)owrót do MENU KELNERA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")        
+        if(action == ""):
+            self.c.execute("select id_wait login, pass from waiters where login = '" + self.waiter_login + "';")
+            result_waiter_log = self.c.fetchall()
+            self.c.execute("select id_table, nr_table, rest_name from type_tables natural left join restaurants where nr_table = '" + nr_table + "' and rest_name = '" + self.waiter_rest + "';")
+            result_id_table = self.c.fetchall()
+            self.c.execute('insert into occupancy (id_table, id_wait, time_occ_start) values (' + str(result_id_table[0][0]) + ', ' + str(result_waiter_log[0][0]) + ', now());')
+            self.conn.commit()
+            print()
+            print("Otworzono rachunek dla stolika: " + nr_table)
+            action = input("Naciśnij ENTER, aby przejść do MENU KELNERA: ")
+            while (action != ""):
+                print()
+                print("Wprowadzono niepoprawny klawisz")
+                action = input("Naciśnij ENTER, aby przejść do MENU KELNERA: ")
+            self.waiter_panel() 
+        else:
+            self.waiter_panel()
         
     def occupancy_stop(self):
         print()
@@ -406,11 +439,7 @@ class Waiter:
         
     def booking_check(self):
         print()
-        print("W budowie")
-        
-    def profile_history(self):
-        print()
-        print("W budowie")    
+        print("W budowie")     
 
 # Logo aplikacji
 
@@ -445,5 +474,5 @@ while (next != ""):
     print(linia)
     print("Wprowadzono niepoprawny kawisz")
     next = input("Naciśnij ENTER aby kontynuować: ")
-
+    
 start = MenuStart()
