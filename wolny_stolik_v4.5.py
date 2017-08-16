@@ -194,7 +194,7 @@ class User:
                     print("Wprowadzono niepoprawny klawisz")
                     action = input("Naciśnij ENTER, aby przejść do menu logowania: ")
                 self.user_menu()
-            elif(action != "P" and action != "p"):
+            else:
                 self.user_menu()
         elif (action == "N" or action =="n"):
             print()
@@ -214,7 +214,7 @@ class User:
                     print("Wprowadzono niepoprawny klawisz")
                     action = input("Naciśnij ENTER, aby przejść do menu logowania: ")
                 self.user_menu()
-            elif (action != "P" and action != "p"):
+            else:
                 self.user_menu() 
             
     def user_panel(self):
@@ -250,7 +250,7 @@ class User:
             print("Powiedz jak bardzo jesteś głodny: ")        
             action = input("(J)uż jestem głodny! Szukaj aktualnie WOLNY STOLIK\n(B)ędę głodny w przyszłości. Dokonaj rezerwacji WOLNY STOLIK z wyprzedzeniem\n(P)owrót do MENU UŻYTKOWNIKA\nTwój wybór: ")       
         if (action == "J" or action == "j"):
-            self.c.execute("select id_rest, rest_name, type_cuisine, round(avg(value_rating),1) as 'Ocena' from restaurants natural left join rating natural left join cities natural right join cuisines where city_name = ((select city_name from cities natural left join users where e_mail = '" + self.name + "')) group by rest_name order by city_name desc, Ocena desc;")
+            self.c.execute("select id_rest, rest_name, type_cuisine, round(avg(value_rating),1) as 'Ocena' from restaurants natural left join rating natural left join cities natural right join cuisines where city_name = ((select city_name from cities natural left join users where e_mail = '" + self.user_e_mail + "')) group by rest_name order by city_name desc, Ocena desc;")
             result_search_now = self.c.fetchall()
             i = 1
             print()
@@ -272,6 +272,7 @@ class User:
             print("W budowie")
         elif (action == "P" or action == "p"):
             self.user_panel()
+            
     def check_e_mail_correct(self, e_mail): # sprawdza czy podany przez użytkownika login jest już zajęty lub jeżeli nie jest to czy podany ciąg znaków jest adresem e-mail (czy zawiera symbol "@") 
         i = 0
         test = 0
@@ -346,7 +347,8 @@ class Waiter:
                 if (action == "W" or action == "w"):
                     self.waiter_log()
                 else:
-                    self.waiter_menu()      
+                    self.waiter_menu()  
+                    
     def waiter_panel(self):
         print()
         print(linia)
@@ -360,13 +362,33 @@ class Waiter:
             print("Wprowadzono niepoprawny klawisz")        
             action = input("(O)twórz nowy rachunek\n(Z)amknij bieżący rachunek\n(S)prawdź rezerwacje\n(H)istoria konta\n(W)yloguj\nTwój wybór: ")
         if (action == "O" or action == "o"):
-            self.occupancy_start()
+            self.count_table_occ_start()
         elif (action == "Z" or action == "z"):
-            self.occupancy_stop()
+            self.count_table_occ_stop()
         elif (action == "S" or action == "s"):
             self.booking_check()
         else:
-            self.waiter_menu()   
+            self.waiter_menu() 
+    
+    def count_table_occ_start(self):
+        self.c.execute("select count(nr_table) from type_tables natural left join restaurants where rest_name = '" + self.waiter_rest + "' group by id_rest;")
+        result_qty_table_in_rest = self.c.fetchall()
+        self.c.execute("select count(nr_table) from occupancy natural left join restaurants natural left join type_tables where rest_name = '" + self.waiter_rest + "' group by id_rest;")
+        result_qty_table_occ = self.c.fetchall()
+        if (len(result_qty_table_occ) == 0):
+            self.occupancy_start()
+        elif (result_qty_table_occ[0][0] == result_qty_table_in_rest[0][0]):
+            print()
+            print("Brak wolnych stolików")
+            action = input("Naciśnij ENTER, aby wrócić do MENU KELNERA: ")
+            while (action != ""):
+                print()
+                print("Wprowadzono niepoprawny klawisz")
+                action = input("Naciśnij ENTER, aby wrócić do MENU KELNERA: ")
+            self.waiter_panel()
+        else:
+            self.occupancy_start()
+            
     def occupancy_start(self):
         self.c.execute("select nr_table, qty_chairs from type_tables natural left join restaurants where rest_name = '" + self.waiter_rest + "';")
         result_search_now = self.c.fetchall() 
@@ -379,6 +401,7 @@ class Waiter:
         print("| %-11s| %-27s| %-39s |" % (napis1, napis2, napis3))
         print("-"*85)
         i = 1
+        list = []
         for v in result_search_now:
             self.c.execute("select rest_name, nr_table, login, qty_chairs, time_occ_start from occupancy natural join type_tables natural join restaurants natural left join waiters where rest_name = '" + self.waiter_rest + "' and nr_table = '" + str(i) + "';")
             result_is_it_occ = self.c.fetchall()
@@ -388,42 +411,33 @@ class Waiter:
                 stat = "WOLNY"
                 print("| %-11s| %-27s| %-39s |" % (nr, qty,stat))
                 print("-"*85)
+                list.append(nr)
             else:
                 nr = v[0]
                 qty = v[1]
                 stat = "ZAJĘTY | Obsługiwany przez: " + result_is_it_occ[0][2]
                 print("| %-11s| %-27s| %-39s |" % (nr, qty,stat,))
                 print("-"*85)           
-            i = i + 1 
-        nr_table = input("Wybierz NR wolnego STOLIKA aby otworzyć rachunek: ") 
-        self.c.execute("select rest_name, nr_table, login, qty_chairs, time_occ_start from occupancy natural join type_tables natural join restaurants natural left join waiters where rest_name = '" + self.waiter_rest + "' and nr_table = '" + nr_table + "';")
-        result_is_it_occ = self.c.fetchall()
-        self.c.execute("select rest_name, nr_table, qty_chairs from type_tables natural left join restaurants where nr_table = '" + nr_table + "' and rest_name = '" + self.waiter_rest + "';")
-        result_is_nr_table_in_restaurant = self.c.fetchall()
-        while(len(result_is_nr_table_in_restaurant) == 0 or len(result_is_it_occ) == 1):
+            i = i + 1
+        while ((self.check_nr_table_occ_start() == False) or (self.nr_table not in list)):
             print()
-            print("Wprowadzono błędny nr stolik lub stolik jest już zanjęty")
-            nr_table = input("Wybierz NR wolnego STOLIKA aby otworzyć rachunek\n(P)owrót do MENU KELNERA\nTwój wybór: ")
-            self.c.execute("select rest_name, nr_table, login, qty_chairs, time_occ_start from occupancy natural join type_tables natural join restaurants natural left join waiters where rest_name = '" + self.waiter_rest + "' and nr_table = '" + nr_table + "';")
-            result_is_it_occ = self.c.fetchall()
-            self.c.execute("select rest_name, nr_table, qty_chairs from type_tables natural left join restaurants where nr_table = '" + nr_table + "' and rest_name = '" + self.waiter_rest + "';")
-            result_is_nr_table_in_restaurant = self.c.fetchall()      
+            print("Wprowadzono błędny nr stolik lub stolik jest już zajęty")
         print()
-        print("Wybrano stolik: " + nr_table)
-        action = input("Naciśnij ENTER, aby potwierdzić otwarcie rachunku dla stolika: " + nr_table + "\n(P)owrót do MENU KELNERA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+        print("Wybrano stolik: " + str(self.nr_table))
+        action = input("Naciśnij ENTER, aby potwierdzić otwarcie rachunku dla stolika: " + str(self.nr_table) + "\n(P)owrót do MENU KELNERA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")        
         while (action != "" and action != "P" and action != "p"):
             print()
             print("Wprowadzono niepoprawny klawisz")             
-            action = input("Naciśnij ENTER, aby potwierdzić otwarcie rachunku dla stolika: " + nr_table + "\n(P)owrót do MENU KELNERA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")        
+            action = input("Naciśnij ENTER, aby potwierdzić otwarcie rachunku dla stolika: " + str(self.nr_table) + "\n(P)owrót do MENU KELNERA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
         if(action == ""):
             self.c.execute("select id_wait login, pass from waiters where login = '" + self.waiter_login + "';")
             result_waiter_log = self.c.fetchall()
-            self.c.execute("select id_table, nr_table, rest_name from type_tables natural left join restaurants where nr_table = '" + nr_table + "' and rest_name = '" + self.waiter_rest + "';")
+            self.c.execute("select id_table, nr_table, rest_name from type_tables natural left join restaurants where nr_table = '" + str(self.nr_table) + "' and rest_name = '" + self.waiter_rest + "';")
             result_id_table = self.c.fetchall()
             self.c.execute('insert into occupancy (id_table, id_wait, time_occ_start) values (' + str(result_id_table[0][0]) + ', ' + str(result_waiter_log[0][0]) + ', now());')
             self.conn.commit()
             print()
-            print("Otworzono rachunek dla stolika: " + nr_table)
+            print("Otworzono rachunek dla stolika: " + str(self.nr_table))
             action = input("Naciśnij ENTER, aby przejść do MENU KELNERA: ")
             while (action != ""):
                 print()
@@ -431,11 +445,87 @@ class Waiter:
                 action = input("Naciśnij ENTER, aby przejść do MENU KELNERA: ")
             self.waiter_panel() 
         else:
-            self.waiter_panel()
+            self.waiter_panel()        
+            
+    def check_nr_table_occ_start(self): # sprawdza czy wprowadzona wartość przez kelnera jest integer w celu dokonania zajętości stolika
+        while(True):
+            try:
+                self.nr_table = int(input("Wybierz NR wolnego STOLIKA, aby otworzyć rachunek (dokonać zajętości stolika): "))
+                test = True
+                break
+            except:
+                print()
+                print("Wprowadzono błędny nr stolik lub stolik jest już zajęty")
+        return test        
         
+    def count_table_occ_stop(self):
+        self.c.execute("select nr_table, qty_chairs from occupancy natural left join type_tables natural left join waiters where login = '" + self.waiter_login + "' order by nr_table;")
+        result_waiter_occ = self.c.fetchall()
+        if (len(result_waiter_occ) == 0):
+            print()
+            print("Brak otwartych rachunków na Twoim koncie")
+            action = input("Naciśnij ENTER, aby wrócić do MENU KELNERA: ")
+            while (action != ""):
+                print()
+                print("Wprowadzono niepoprawny klawisz")
+                action = input("Naciśnij ENTER, aby wrócić do MENU KELNERA: ")
+            self.waiter_panel()
+        else:
+            self.occupancy_stop()
+    
     def occupancy_stop(self):
+        self.c.execute("select nr_table, qty_chairs from occupancy natural left join type_tables natural left join waiters where login = '" + self.waiter_login + "' order by nr_table;")
+        result_waiter_occ = self.c.fetchall()
+        napis1 = "NR STOLIKA"
+        napis2 = "Ilość krzeseł przy stoliku"
         print()
-        print("W budowie")
+        print("Obsługiwane przez Ciebie stoliki:")  
+        print("-"*43)
+        print("| %-11s| %-27s|" % (napis1, napis2))
+        print("-"*43) 
+        list = []
+        for v in result_waiter_occ:
+            nr = v[0]
+            qty = v[1]
+            print("| %-11s| %-27s|" % (nr, qty))
+            print("-"*43)
+            list.append(nr)
+        while ((self.check_nr_table_occ_stop() == False) or (self.nr_table not in list)):
+            print()
+            print("Wprowadzono błędny nr stolik")
+        print()
+        print("Wybrano stolik: " + str(self.nr_table))
+        action = input("Naciśnij ENTER, aby potwierdzić zamknięcie rachunku dla stolika (zwolnić stolik): " + str(self.nr_table) + "\n(P)owrót do MENU KELNERA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+        while (action != "" and action != "P" and action != "p"):
+            print()
+            print("Wprowadzono niepoprawny klawisz")          
+            action = input("Naciśnij ENTER, aby potwierdzić zamknięcie rachunku dla stolika (zwolnić stolik): " + str(self.nr_table) + "\n(P)owrót do MENU KELNERA (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+        if (action == ""):
+            self.c.execute("select id_table, nr_table, rest_name from type_tables natural left join restaurants where nr_table = '" + str(self.nr_table) + "' and rest_name = '" + self.waiter_rest + "';")
+            result_id_table = self.c.fetchall()    
+            self.c.execute("delete from occupancy where id_table = '" + str(result_id_table[0][0]) + "';")
+            self.conn.commit()
+            print()
+            print("Zamknięto rachunek dla stolika (zwolniono stolik): " + str(self.nr_table))
+            action = input("Naciśnij ENTER, aby przejść do MENU KELNERA: ")
+            while (action != ""):
+                print()
+                print("Wprowadzono niepoprawny klawisz")
+                action = input("Naciśnij ENTER, aby przejść do MENU KELNERA: ")
+            self.waiter_panel()            
+        else:
+            self.waiter_panel() 
+            
+    def check_nr_table_occ_stop(self): # sprawdza czy wprowadzona wartość przez kelnera jest integer w celu dokonania zwolnienia stolika
+        while(True):
+            try:
+                self.nr_table = int(input("Wybierz NR STOLIKA, aby zamknąć rachunek (zwolnić stolik): "))
+                test = True
+                break
+            except:
+                print()
+                print("Wprowadzono błędny nr stolik")
+        return test       
         
     def booking_check(self):
         print()
