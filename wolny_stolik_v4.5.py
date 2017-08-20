@@ -229,12 +229,18 @@ class User:
             print()
             print(linia)
             print("Wprowadzono niepoprawny klawisz")        
-            action = input("(S)zukaj WOLNY STOLIK\n(M)oje rezerwacje\n(U)stawienia konta\n(W)yloguj\nTwój wybór: ")
+            action = input("(S)zukaj WOLNY STOLIK\n(M)oje rezerwacje\n(W)yloguj\nTwój wybór: ")
         if (action == "S" or action == "s"):
             self.wolny_stolik()
         elif (action == "M" or action == "m"):
             print()
             print("W budowie")
+            action = input("Naciśnij ENTER, aby przejść do MENU UŻYTKOWNIKA: ")
+            while (action != ""):
+                print()
+                print("Wprowadzono niepoprawny klawisz")          
+                action = input("Naciśnij ENTER, aby przejść do MENU UŻYTKOWNIKA: ")
+            self.user_panel()
         else:
             self.user_menu()
             
@@ -255,6 +261,12 @@ class User:
         elif (action == "B" or action == "b"):
             print()
             print("W budowie")
+            action = input("Naciśnij ENTER, aby przejść do MENU WOLNY STOLIK: ")
+            while (action != ""):
+                print()
+                print("Wprowadzono niepoprawny klawisz")          
+                action = input("Naciśnij ENTER, aby przejść do MENU WOLNY STOLIK: ")
+            self.wolny_stolik()            
         elif (action == "P" or action == "p"):
             self.user_panel()
     
@@ -295,19 +307,28 @@ class User:
         result_search_now_2 = self.c.fetchall()
         napis1 = "NR STOLIKA"
         napis2 = "Ilość krzeseł przy stoliku"
+        napis3 = "Uwagi"
         list = []
         print()
         print("Który stolik chcesz ZAKLEPAĆ:")
-        print("-"*43)
-        print("| %-11s| %-27s|" % (napis1, napis2))
-        print("-"*43)
+        print("-"*85)
+        print("| %-11s| %-27s| %-40s|" % (napis1, napis2, napis3))
+        print("-"*85)
         for v in result_search_now_2:
             if (self.check_table_is_occ(v[0]) == 0 and self.check_table_is_book_15_min(v[0]) == 0):
                 nr = v[1]
                 qty = v[2]
-                print("| %-11s| %-27s|" % (nr, qty))
-                print("-"*43)
+                at = ""
+                print("| %-11s| %-27s| %-40s|" % (nr, qty, at))
+                print("-"*85)
                 list.append(nr)
+            #elif (self.check_table_is_occ(v[0]) == 0 and self.check_table_is_book_15_min(v[0]) == 2):
+                #nr = v[1]
+                #qty = v[2]
+                #at = "Stolik zarezerwowany od godziny: "
+                #print("| %-11s| %-27s| %-50s|" % (nr, qty, at + self.check_book_start(v[0])))
+                #print("-"*95)
+                #list.append(nr)                
         while ((self.check_nr_table_is_int() == False) or (self.nr_table not in list)):
             print()
             print("Wprowadzono błędny nr stolik")
@@ -343,21 +364,32 @@ class User:
                 occ_and_book = occ_and_book + 1   
         return occ_and_book
     
+    #def check_book_start(self, id_table):
+        #self.c.execute('select date_format(date_book_start, "%H:%i") from booking where timestampdiff(minute, now(), date_book_start) > 0 and timestampdiff(minute, now(), date_book_start) <= 90 and id_table = ' + str(id_table) + ';')
+        #date_book_start = self.c.fetchall()
+        #return date_book_start[0][0]
+    
     def check_table_is_occ(self, id_table):
         self.c.execute("select * from occupancy where id_table = '" + str(id_table) + "';")        
         check_table_occ = self.c.fetchall()
         return len(check_table_occ)
     
     def check_table_is_book_15_min(self, id_table):
-        self.c.execute("select case when timestampdiff(minute, now(), date_book_start) <= 0 and timestampdiff(minute, now(), date_book_start) >= -15 then 1 else 0 end from booking where id_table = '" + str(id_table) + "';")
+        self.c.execute("select case when timestampdiff(minute, now(), date_book_start) > 90 then 3 when timestampdiff(minute, now(), date_book_start) > 0 and timestampdiff(minute, now(), date_book_start) <= 90 then 2 when timestampdiff(minute, now(), date_book_start) <= 0 and timestampdiff(minute, now(), date_book_start) >= -15 then 1 else 0 end from booking where id_table = '" + str(id_table) + "';")
         check_table_book = self.c.fetchall()
         if (len(check_table_book) == 0):
             return 0
         else:
             if (check_table_book[0][0] == 0):
+                self.c.execute("delete from booking where id_table = '" + str(id_table) + "' and timestampdiff(minute, now(), date_book_start) < -15;")
+                self.conn.commit()
                 return 0
-            else:
-                return 1    
+            elif (check_table_book[0][0] == 1):
+                return 1
+            #elif (check_table_book[0][0] == 2):
+                #return 2 
+            #elif (check_table_book[0][0] == 3):
+                #return 0
     
     def count_all_table_in_rest(self, rest_name):
         self.c.execute("select count(nr_table) from type_tables natural left join restaurants where rest_name = '" + rest_name + "' group by id_rest;")
@@ -412,8 +444,8 @@ class Waiter:
         if (action == "L" or action == "l"):
             self.waiter_log()
         else:
-                self.conn.close()
-                start = MenuStart()   
+            self.conn.close()
+            start = MenuStart()   
                 
     def waiter_log(self):
         print()
@@ -468,7 +500,14 @@ class Waiter:
         elif (action == "Z" or action == "z"):
             self.count_table_occ_stop()
         elif (action == "S" or action == "s"):
-            self.booking_check()
+            print()
+            print("W budowie")
+            action = input("Naciśnij ENTER, aby przejść do MENU KELNERA: ")
+            while (action != ""):
+                print()
+                print("Wprowadzono niepoprawny klawisz")          
+                action = input("Naciśnij ENTER, aby przejść do MENU KELNERA: ")
+            self.waiter_panel()            
         else:
             self.waiter_menu() 
     
@@ -499,27 +538,38 @@ class Waiter:
         napis3 = "Status"
         print()
         print("Aktualny status stolików:")
-        print("-"*85)
-        print("| %-11s| %-27s| %-39s |" % (napis1, napis2, napis3))
-        print("-"*85)
+        print("-"*100)
+        print("| %-11s| %-27s| %-54s |" % (napis1, napis2, napis3))
+        print("-"*100)
         i = 1
         list = []
         for v in result_search_now:
+            self.c.execute("delete from booking where id_table = '" + str(i) + "' and timestampdiff(minute, now(), date_book_start) < -15;")
+            self.conn.commit()               
             self.c.execute("select rest_name, nr_table, login, qty_chairs, time_occ_start from occupancy natural join type_tables natural join restaurants natural left join waiters where rest_name = '" + self.waiter_rest + "' and nr_table = '" + str(i) + "';")
             result_is_it_occ = self.c.fetchall()
-            if (len(result_is_it_occ) == 0):
+            self.c.execute("select rest_name, id_table, nr_table, qty_chairs, e_mail, date_book_start from restaurants natural join type_tables natural join users natural join booking where id_table = '" + str(i) + "';")
+            result_is_it_book = self.c.fetchall()           
+            if (len(result_is_it_occ) == 0 and len(result_is_it_book) == 0):
                 nr = v[0]
                 qty = v[1]
                 stat = "WOLNY"
-                print("| %-11s| %-27s| %-39s |" % (nr, qty,stat))
-                print("-"*85)
+                print("| %-11s| %-27s| %-54s |" % (nr, qty,stat))
+                print("-"*100)
                 list.append(nr)
+            elif (len(result_is_it_occ) == 0 and len(result_is_it_book) != 0):
+                nr = v[0]
+                qty = v[1]
+                stat = "ZAKLEPANY przez użtykownika: " + result_is_it_book[0][4]
+                print("| %-11s| %-27s| %-54s |" % (nr, qty,stat))
+                print("-"*100)
+                list.append(nr)                
             else:
                 nr = v[0]
                 qty = v[1]
-                stat = "ZAJĘTY | Obsługiwany przez: " + result_is_it_occ[0][2]
-                print("| %-11s| %-27s| %-39s |" % (nr, qty,stat,))
-                print("-"*85)           
+                stat = "ZAJĘTY przez: " + result_is_it_occ[0][2]
+                print("| %-11s| %-27s| %-54s |" % (nr, qty,stat,))
+                print("-"*100)           
             i = i + 1
         while ((self.check_nr_table_occ_start() == False) or (self.nr_table not in list)):
             print()
@@ -536,6 +586,8 @@ class Waiter:
             result_waiter_log = self.c.fetchall()
             self.c.execute("select id_table, nr_table, rest_name from type_tables natural left join restaurants where nr_table = '" + str(self.nr_table) + "' and rest_name = '" + self.waiter_rest + "';")
             result_id_table = self.c.fetchall()
+            self.c.execute('delete from booking where id_table = ' + str(result_id_table[0][0]) + ' and timestampdiff(minute, now(), date_book_start) < 0;')
+            self.conn.commit()            
             self.c.execute('insert into occupancy (id_table, id_wait, time_occ_start) values (' + str(result_id_table[0][0]) + ', ' + str(result_waiter_log[0][0]) + ', now());')
             self.conn.commit()
             print()
@@ -627,11 +679,7 @@ class Waiter:
             except:
                 print()
                 print("Wprowadzono błędny nr stolik")
-        return test       
-        
-    def booking_check(self):
-        print()
-        print("W budowie")     
+        return test           
 
 # Logo aplikacji
 
