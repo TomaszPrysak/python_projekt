@@ -47,7 +47,7 @@ class Admin:
     
     def __init__(self, password):
         self.password = password
-        self.conn = pymysql.connect("localhost", "root", self.password, "wolny_stolik")
+        self.conn = pymysql.connect("localhost", "root", self.password, "wolny_stolik",  use_unicode=True, charset="utf8")
         self.c = self.conn.cursor()
         print()
         print(linia)        
@@ -60,7 +60,7 @@ class User:
     
     def __init__(self, password):
         self.password = password
-        self.conn = pymysql.connect("localhost", "users", self.password, "wolny_stolik")
+        self.conn = pymysql.connect("localhost", "users", self.password, "wolny_stolik",  use_unicode=True, charset="utf8")
         self.c = self.conn.cursor()
         self.user_menu()
         
@@ -86,8 +86,9 @@ class User:
         print(linia)
         self.user_e_mail = input("Podaj e-mail: ")
         user_pass = input("Podaj hasło: ")
-        self.c.execute("select e_mail, pass from users where e_mail = '" + self.user_e_mail + "';")
+        self.c.execute("select id_user, e_mail, pass from users where e_mail = '" + self.user_e_mail + "';")
         result_user_log = self.c.fetchall()
+        self.id_user = result_user_log[0][0]
         while (len(result_user_log) == 0):
             print()
             print("Podany e-mail i/lub hasło są nieprawidłowe")
@@ -100,8 +101,8 @@ class User:
                 self.user_log()
             elif (action == "P" or action =="p"):
                 self.user_menu()
-        if (self.user_e_mail == result_user_log[0][0]):
-            if (user_pass == result_user_log[0][1]):
+        if (self.user_e_mail == result_user_log[0][1]):
+            if (user_pass == result_user_log[0][2]):
                 self.user_panel()
             else:
                 print()
@@ -250,29 +251,130 @@ class User:
             print("Powiedz jak bardzo jesteś głodny: ")        
             action = input("(J)uż jestem głodny! Szukaj aktualnie WOLNY STOLIK\n(B)ędę głodny w przyszłości. Dokonaj rezerwacji WOLNY STOLIK z wyprzedzeniem\n(P)owrót do MENU UŻYTKOWNIKA\nTwój wybór: ")       
         if (action == "J" or action == "j"):
-            self.c.execute("select id_rest, rest_name, type_cuisine, round(avg(value_rating),1) as 'Ocena' from restaurants natural left join rating natural left join cities natural right join cuisines where city_name = ((select city_name from cities natural left join users where e_mail = '" + self.user_e_mail + "')) group by rest_name order by city_name desc, Ocena desc;")
-            result_search_now = self.c.fetchall()
-            i = 1
-            print()
-            print("Restauracje w mieście przypisanym do Twojego konta w których możesz zaspokoić swój głód:")
-            print("-------------------------------------------------")
-            print("ID  | Restauracja         | Rodzaj kuchni | Ocena")
-            print("-------------------------------------------------")         
-            for v in result_search_now:
-                id = v[0]
-                rest = v[1]
-                cuisine = v[2]
-                rate = v[3]
-                print("%-4s| %-20s| %-14s| %-4s" % (id, rest, cuisine, rate))
-                i = i + 1
-            print("-------------------------------------------------")
-            action = input("Wprowadź numer restauracji: ")
+            self.wolny_stolik_now()
         elif (action == "B" or action == "b"):
             print()
             print("W budowie")
         elif (action == "P" or action == "p"):
             self.user_panel()
+    
+    def wolny_stolik_now(self):
+        self.c.execute("select id_rest, rest_name, type_cuisine, round(avg(value_rating),1) as 'Ocena' from restaurants natural left join rating natural left join cities natural right join cuisines where city_name = ((select city_name from cities natural left join users where e_mail = '" + self.user_e_mail + "')) group by rest_name order by city_name desc, Ocena desc;")
+        result_search_now_1 = self.c.fetchall()
+        i = 1
+        list_rest = {}
+        napis1 = "ID"
+        napis2 = "Restauracja"
+        napis3 = "Rodzaj kuchni"
+        napis4 = "Ocena"
+        napis5 = "Ilość wolnych stolików: "
+        print()
+        print("Restauracje w mieście przypisanym do Twojego konta, w których aktualnie jest WOLNY STOLIK:")
+        print("-"*85)
+        print("| %-4s| %-20s| %-15s| %-8s| %-26s |" % (napis1, napis2, napis3, napis4, napis5))
+        print("-"*85)         
+        for v in result_search_now_1:
+            a = int(self.count_all_table_in_rest(v[1]))
+            b = int(self.count_occ_and_book_table_in_rest(v[1]))
+            c = a - b
+            if (a - b > 0):
+                id = i
+                rest = v[1]
+                cuisine = v[2]
+                rate = v[3]
+                print("| %-4s| %-20s| %-15s| %-8s| %-26s |" % (id, rest, cuisine, rate, napis5 + str(c)))
+                print("-"*85)
+                list_rest[str(i)] = rest
+                i = i + 1
+        action = input("Wprowadź numer restauracji w której chcesz ZAKLEPAĆ, na 15 minut, stolik: ")
+        while (action not in list_rest):
+            print()
+            print("Wprowadzono błędny numer restauracji")
+            action = input("Wprowadź numer restauracji w której chcesz ZAKLEPAĆ, na 15 minut, stolik: ")
+        self.c.execute("select id_table, nr_table, qty_chairs from type_tables natural left join restaurants where rest_name = '" + list_rest[action] + "';")
+        result_search_now_2 = self.c.fetchall()
+        napis1 = "NR STOLIKA"
+        napis2 = "Ilość krzeseł przy stoliku"
+        list = []
+        print()
+        print("Który stolik chcesz ZAKLEPAĆ:")
+        print("-"*43)
+        print("| %-11s| %-27s|" % (napis1, napis2))
+        print("-"*43)
+        for v in result_search_now_2:
+            if (self.check_table_is_occ(v[0]) == 0 and self.check_table_is_book_15_min(v[0]) == 0):
+                nr = v[1]
+                qty = v[2]
+                print("| %-11s| %-27s|" % (nr, qty))
+                print("-"*43)
+                list.append(nr)
+        while ((self.check_nr_table_is_int() == False) or (self.nr_table not in list)):
+            print()
+            print("Wprowadzono błędny nr stolik")
+        print()
+        print("Wybrano stolik: " + str(self.nr_table))
+        action = input("Naciśnij ENTER, aby potwierdzić ZAKLEPANIE stolika: " + str(self.nr_table) + "\n(P)owrót do MENU WOLNY STOLIK (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+        while (action != "" and action != "P" and action != "p"):
+            print()
+            print("Wprowadzono niepoprawny klawisz")          
+            action = input("Naciśnij ENTER, aby potwierdzić ZAKLEPANIE stolika: " + str(self.nr_table) + "\n(P)owrót do MENU WOLNY STOLIK (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
+        if (action == ""):
+            self.c.execute("insert into booking (id_user, id_table, date_book_start) values (" + str(self.id_user) + ", " + str(self.nr_table) + ", now());")
+            self.conn.commit()
+            print()
+            print("ZAKLEPANO stolik: " + str(self.nr_table) + " , masz 15 minut na dojście do restauracji")
+            action = input("Naciśnij ENTER, aby przejść do MENU WOLNY STOLIK: ")
+            while (action != ""):
+                print()
+                print("Wprowadzono niepoprawny klawisz")
+                action = input("Naciśnij ENTER, aby przejść do MENU WOLNY STOLIK: ")
+            self.wolny_stolik()            
+        else:
+            self.wolny_stolik()
+     
+    def count_occ_and_book_table_in_rest(self, rest_name):
+        occ_and_book = 0
+        self.c.execute("select id_table, nr_table, qty_chairs from type_tables natural left join restaurants where rest_name = '" + rest_name + "';")
+        all_table_form = self.c.fetchall()
+        for v in all_table_form:
+            if (self.check_table_is_occ(v[0]) != 0):
+                occ_and_book = occ_and_book + 1
+            if (self.check_table_is_book_15_min(v[0]) == 1):
+                occ_and_book = occ_and_book + 1   
+        return occ_and_book
+    
+    def check_table_is_occ(self, id_table):
+        self.c.execute("select * from occupancy where id_table = '" + str(id_table) + "';")        
+        check_table_occ = self.c.fetchall()
+        return len(check_table_occ)
+    
+    def check_table_is_book_15_min(self, id_table):
+        self.c.execute("select case when timestampdiff(minute, now(), date_book_start) <= 0 and timestampdiff(minute, now(), date_book_start) >= -15 then 1 else 0 end from booking where id_table = '" + str(id_table) + "';")
+        check_table_book = self.c.fetchall()
+        if (len(check_table_book) == 0):
+            return 0
+        else:
+            if (check_table_book[0][0] == 0):
+                return 0
+            else:
+                return 1    
+    
+    def count_all_table_in_rest(self, rest_name):
+        self.c.execute("select count(nr_table) from type_tables natural left join restaurants where rest_name = '" + rest_name + "' group by id_rest;")
+        all_table_in_rest = self.c.fetchall()
+        return all_table_in_rest[0][0]     
             
+    def check_nr_table_is_int(self): # sprawdza czy wprowadzona wartość przez użytkownika jest integer w celu dokonania zaklepania stolika
+        while(True):
+            try:
+                self.nr_table = int(input("Wybierz NR STOLIKA, aby ZAKLEPAĆ go na 15 minut: "))
+                test = True
+                break
+            except:
+                print()
+                print("Wprowadzono błędny nr stolik")
+        return test     
+    
     def check_e_mail_correct(self, e_mail): # sprawdza czy podany przez użytkownika login jest już zajęty lub jeżeli nie jest to czy podany ciąg znaków jest adresem e-mail (czy zawiera symbol "@") 
         i = 0
         test = 0
@@ -293,7 +395,7 @@ class Waiter:
     
     def __init__(self, password):
         self.password = password
-        self.conn = pymysql.connect("localhost", "waiters", self.password, "wolny_stolik")
+        self.conn = pymysql.connect("localhost", "waiters", self.password, "wolny_stolik",  use_unicode=True, charset="utf8")
         self.c = self.conn.cursor() 
         self.waiter_menu()        
         
