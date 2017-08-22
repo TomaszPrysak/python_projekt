@@ -47,7 +47,7 @@ class Admin:
     
     def __init__(self, password):
         self.password = password
-        self.conn = pymysql.connect("localhost", "root", self.password, "wolny_stolik",  use_unicode=True, charset="utf8")
+        self.conn = pymysql.connect("localhost", "root", self.password, "wolny_stolik_5",  use_unicode=True, charset="utf8")
         self.c = self.conn.cursor()
         print()
         print(linia)        
@@ -60,7 +60,7 @@ class User:
     
     def __init__(self, password):
         self.password = password
-        self.conn = pymysql.connect("localhost", "users", self.password, "wolny_stolik",  use_unicode=True, charset="utf8")
+        self.conn = pymysql.connect("localhost", "users", self.password, "wolny_stolik_5",  use_unicode=True, charset="utf8")
         self.c = self.conn.cursor()
         self.user_menu()
         
@@ -340,7 +340,7 @@ class User:
             print("Wprowadzono niepoprawny klawisz")          
             action = input("Naciśnij ENTER, aby potwierdzić ZAKLEPANIE stolika: " + str(self.nr_table) + "\n(P)owrót do MENU WOLNY STOLIK (kasuje dotychczas wprowadzone dane)\nTwój wybór: ")
         if (action == ""):
-            self.c.execute("insert into booking (id_user, id_table, date_book_start) values (" + str(self.id_user) + ", " + str(self.nr_table) + ", now());")
+            self.c.execute("insert into booking_now (id_user, id_table, date_book_now) values (" + str(self.id_user) + ", " + str(self.nr_table) + ", now());")
             self.conn.commit()
             print()
             print("ZAKLEPANO stolik: " + str(self.nr_table) + " , masz 15 minut na dojście do restauracji")
@@ -375,13 +375,13 @@ class User:
         return len(check_table_occ)
     
     def check_table_is_book_15_min(self, id_table):
-        self.c.execute("select case when timestampdiff(minute, now(), date_book_start) > 90 then 3 when timestampdiff(minute, now(), date_book_start) > 0 and timestampdiff(minute, now(), date_book_start) <= 90 then 2 when timestampdiff(minute, now(), date_book_start) <= 0 and timestampdiff(minute, now(), date_book_start) >= -15 then 1 else 0 end from booking where id_table = '" + str(id_table) + "';")
+        self.c.execute("select case when timestampdiff(minute, now(), date_book_now) > 90 then 3 when timestampdiff(minute, now(), date_book_now) > 0 and timestampdiff(minute, now(), date_book_now) <= 90 then 2 when timestampdiff(minute, now(), date_book_now) <= 0 and timestampdiff(minute, now(), date_book_now) >= -15 then 1 else 0 end from booking_now where id_table = '" + str(id_table) + "';")
         check_table_book = self.c.fetchall()
         if (len(check_table_book) == 0):
             return 0
         else:
             if (check_table_book[0][0] == 0):
-                self.c.execute("delete from booking where id_table = '" + str(id_table) + "' and timestampdiff(minute, now(), date_book_start) < -15;")
+                self.c.execute("delete from booking_now where id_table = '" + str(id_table) + "' and timestampdiff(minute, now(), date_book_now) < -15;")
                 self.conn.commit()
                 return 0
             elif (check_table_book[0][0] == 1):
@@ -427,7 +427,7 @@ class Waiter:
     
     def __init__(self, password):
         self.password = password
-        self.conn = pymysql.connect("localhost", "waiters", self.password, "wolny_stolik",  use_unicode=True, charset="utf8")
+        self.conn = pymysql.connect("localhost", "waiters", self.password, "wolny_stolik_5",  use_unicode=True, charset="utf8")
         self.c = self.conn.cursor() 
         self.waiter_menu()        
         
@@ -544,11 +544,11 @@ class Waiter:
         i = 1
         list = []
         for v in result_search_now:
-            self.c.execute("delete from booking where id_table = '" + str(i) + "' and timestampdiff(minute, now(), date_book_start) < -15;")
+            self.c.execute("delete from booking_now where id_table = '" + str(i) + "' and timestampdiff(minute, now(), date_book_now) < -15;")
             self.conn.commit()               
             self.c.execute("select rest_name, nr_table, login, qty_chairs, time_occ_start from occupancy natural join type_tables natural join restaurants natural left join waiters where rest_name = '" + self.waiter_rest + "' and nr_table = '" + str(i) + "';")
             result_is_it_occ = self.c.fetchall()
-            self.c.execute("select rest_name, id_table, nr_table, qty_chairs, e_mail, date_book_start from restaurants natural join type_tables natural join users natural join booking where id_table = '" + str(i) + "';")
+            self.c.execute("select rest_name, id_table, nr_table, qty_chairs, e_mail, date_book_now from restaurants natural join type_tables natural join users natural join booking_now where id_table = '" + str(i) + "';")
             result_is_it_book = self.c.fetchall()           
             if (len(result_is_it_occ) == 0 and len(result_is_it_book) == 0):
                 nr = v[0]
@@ -586,7 +586,7 @@ class Waiter:
             result_waiter_log = self.c.fetchall()
             self.c.execute("select id_table, nr_table, rest_name from type_tables natural left join restaurants where nr_table = '" + str(self.nr_table) + "' and rest_name = '" + self.waiter_rest + "';")
             result_id_table = self.c.fetchall()
-            self.c.execute('delete from booking where id_table = ' + str(result_id_table[0][0]) + ' and timestampdiff(minute, now(), date_book_start) < 0;')
+            self.c.execute("delete from booking_now where id_table = '" + str(result_id_table[0][0]) + "' and timestampdiff(minute, now(), date_book_now) <= 0;")
             self.conn.commit()            
             self.c.execute('insert into occupancy (id_table, id_wait, time_occ_start) values (' + str(result_id_table[0][0]) + ', ' + str(result_waiter_log[0][0]) + ', now());')
             self.conn.commit()
